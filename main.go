@@ -2,140 +2,84 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/object/commitgraph"
 )
-
-// CheckIfError should be used to naively panics if an error is not nil.
-func CheckIfError(err error) {
-	if err == nil {
-		return
-	}
-
-	fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("error: %s", err))
-
-	os.Exit(1)
-}
 
 func main() {
 
-	// We instantiate a new repository targeting the given path (the .git folder)
-	// _, err := git.PlainOpen(".")
-	r, _ := git.PlainOpen(".")
+	r, _ := git.PlainOpen("../client-verifier")
+	cni := commitgraph.NewObjectCommitNodeIndex(r.Storer)
 
-	// ref, _ := r.Head()
+	ref, _ := r.Head()
+	cn, _ := cni.Get(ref.Hash())
 
-	// c, _ := object.GetCommit(r.Storer, ref.Hash())
+	// Ordered
 
-	// fmt.Println(c.Message)
+	i := commitgraph.NewCommitNodeIterCTime(cn, nil, nil)
 
-	// b, _ := git.Blame(c, "test/unit/FundAdapter.t.sol")
+	i.ForEach(func(cn commitgraph.CommitNode) error {
+		if cn == nil {
+			return fmt.Errorf("nil commit node")
+		}
 
-	// fmt.Println(b.String())
+		c, _ := cn.Commit()
+		fmt.Println(fmt.Sprintf(" * Commit hash %s - %s: ", c.Hash, cn.CommitTime()))
 
-	// lines := b.Lines
+		files, _ := c.Files()
+		files.ForEach(func(f *object.File) error {
+			if f == nil {
+				return fmt.Errorf("nil file")
+			}
 
-	// fmt.Println(len(lines))
+			fmt.Println(f.Name)
 
-	// fmt.Println(lines[0])
-	// fmt.Println(lines[1])
-	// fmt.Println(lines[2])
-	// fmt.Println(lines[3])
-	// fmt.Println(lines[4])
-	// fmt.Println(lines[5])
-	// fmt.Println(lines[6])
-	// fmt.Println(lines[7])
-	// fmt.Println(lines[8])
-	// fmt.Println(lines[9])
+			// TODO: Parse file imports
 
-	i, _ := r.CommitObjects()
+			// b, _ := git.Blame(c, f.Name)
+			// fmt.Println(b.String())
 
-	c1, _ := i.Next()
-	// c2, _ := i.Next()
+			// lines := b.Lines
+			// fmt.Println(len(lines))
 
-	files, _ := c1.Files()
+			return nil
+		})
 
-	f1, _ := files.Next()
+		return nil
+	})
 
-	fmt.Println(f1.Name)
+	// Unordered
 
-	b, _ := git.Blame(c1, f1.Name)
+	// i, _ := r.CommitObjects()
 
-	fmt.Println(b.String())
+	// i.ForEach(func(c *object.Commit) error {
+	// 	if c == nil {
+	// 		return fmt.Errorf("nil commit")
+	// 	}
 
-	lines := b.Lines
+	// 	fmt.Println(c.Hash)
+	// 	fmt.Println(" > hash files")
 
-	fmt.Println(len(lines))
+	// 	files, _ := c.Files()
 
-	fmt.Println(lines[0])
-	// fmt.Println(lines[1])
-	// fmt.Println(lines[2])
-	// fmt.Println(lines[3])
-	// fmt.Println(lines[4])
-	// fmt.Println(lines[5])
-	// fmt.Println(lines[6])
-	// fmt.Println(lines[7])
-	// fmt.Println(lines[8])
-	// fmt.Println(lines[9])
+	// 	files.ForEach(func(f *object.File) error {
+	// 		if f == nil {
+	// 			return fmt.Errorf("nil file")
+	// 		}
 
-	f2, _ := files.Next()
+	// 		fmt.Println(f.Name)
 
-	fmt.Println(f2.Name)
+	// 		// b, _ := git.Blame(c1, f1.Name)
+	// 		// fmt.Println(b.String())
 
-	// diffs := diff.Do(c1.String(), c2.String())
+	// 		// lines := b.Lines
+	// 		// fmt.Println(len(lines))
 
-	// length := len(f)
-	// for x := 0; x < length; x++ {
-	// 	fmt.Println(f[x].asdf)
-	// 	// fmt.Println(diffs[x].Text)
-
-	// 	// fmt.Println(diffs[x])
-	// 	// fmt.Println(diffs[x].Type.String())
-	// }
-
-	// diffs := diff.Do(c1.String(), c2.String())
-
-	// length := len(diffs)
-	// for x := 0; x < length; x++ {
-	// 	fmt.Println(diffs[x].Type)
-	// 	fmt.Println(diffs[x].Text)
-
-	// 	fmt.Println(diffs[x])
-	// 	fmt.Println(diffs[x].Type.String())
-	// }
-
-	// fmt.Println("Hash:")
-	// fmt.Println(d.Hash)
-	// fmt.Println(i)
-	// fmt.Println(" - - - - - - - - - - ")
-
-	// ... retrieves the commit history
-	// since := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
-	// until := time.Date(2019, 7, 30, 0, 0, 0, 0, time.UTC)
-	// cIter, err := r.Log(&git.LogOptions{From: ref.Hash(), Since: &since, Until: &until})
-	// CheckIfError(err)
-
-	// // ... just iterates over the commits, printing it
-	// err = cIter.ForEach(func(c *object.Commit) error {
-	// 	fmt.Println(c)
+	// 		return nil
+	// 	})
 
 	// 	return nil
 	// })
-	// CheckIfError(err)
-
-	// git.diffs
-
-	// fmt.Println(err)
-	// c, _ := r.Config()
-
-	// fmt.Println(c)
-	// fmt.Println(c.Core.IsBare)
-
-	// fmt.Println(c.Core.Worktree)
-	// fmt.Println(c.Core.CommentChar)
-
-	// fmt.Println("Hello, World!")
-
-	// fmt.Println(c.Init.DefaultBranch)
 }
